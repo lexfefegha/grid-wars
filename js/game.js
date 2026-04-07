@@ -13,6 +13,18 @@ const GRID_BG = '#F5F0EB';
 const GRID_LINE = 'rgba(44,36,32,0.07)';
 const EMPTY_TILE = '#FFFDF9';
 
+let _notifTimer = null;
+function showNotification(text, type = 'death') {
+    const el = document.getElementById('game-notification');
+    if (!el) return;
+    clearTimeout(_notifTimer);
+    el.textContent = text;
+    el.className = `game-notification notif-${type} show`;
+    _notifTimer = setTimeout(() => {
+        el.classList.remove('show');
+    }, 1500);
+}
+
 export const Game = {
     canvas: null,
     ctx: null,
@@ -195,6 +207,7 @@ export const Game = {
             if (!data) return;
             const opp = this.players.find(p => p.id === opponentId);
             if (!opp) return;
+            const local = this.players.find(p => p.id === this.localPlayerId);
 
             this.previousPositions[opp.id] = { x: opp.x, y: opp.y };
 
@@ -206,13 +219,38 @@ export const Game = {
                 opp.direction = data.direction;
                 opp.nextDirection = data.direction;
             }
-            if (data.alive !== undefined) opp.alive = data.alive;
+            if (data.alive !== undefined) {
+                if (opp.alive && !data.alive) {
+                    Board.clearTrail(opp.id);
+                }
+                if (data.alive === true && opp._killedAt && Date.now() - opp._killedAt < 3000) {
+                    // ignore stale alive:true -- we just killed them locally
+                } else {
+                    opp.alive = data.alive;
+                }
+            }
             if (data.score !== undefined) opp.score = data.score;
-            if (data.kills !== undefined) opp.kills = data.kills;
+
+            if (data.kills !== undefined) {
+                const prevKills = opp.kills;
+                opp.kills = data.kills;
+                if (data.kills > prevKills && local && local.alive) {
+                    local.alive = false;
+                    local.respawnTimer = 5;
+                    Board.clearTrail(local.id);
+                    local.trail = [];
+                    this.triggerShake();
+                    Sound.death();
+                    showNotification(`Killed by ${this.playerNames[opp.id]}`, 'death');
+                }
+            }
         });
 
         FirebaseService.onBoardChange((boardData) => {
             if (!boardData) return;
+            const local = this.players.find(p => p.id === this.localPlayerId);
+            const localId = local ? local.id : null;
+
             const prevCounts = {};
             for (const p of this.players) {
                 prevCounts[p.id] = Board.countTerritory(p.id);
@@ -221,10 +259,18 @@ export const Game = {
             for (const [key, val] of Object.entries(boardData)) {
                 const [xStr, yStr] = key.split('_');
                 const tile = Board.getTile(parseInt(xStr), parseInt(yStr));
-                if (tile) {
-                    tile.owner = val.owner || null;
-                    tile.trail = val.trail || null;
+                if (!tile) continue;
+
+                tile.owner = val.owner || null;
+
+                if (tile.trail === localId || val.trail === localId) {
+                    continue;
                 }
+                const trailOwner = val.trail ? this.players.find(p => p.id === val.trail) : null;
+                if (trailOwner && !trailOwner.alive) {
+                    continue;
+                }
+                tile.trail = val.trail || null;
             }
 
             for (const p of this.players) {
@@ -347,8 +393,17 @@ export const Game = {
 
         movePlayer(local, opponents);
 
-        if (local.kills > prevKills) Sound.kill();
-        if (prevAlive && !local.alive) this.triggerShake();
+        if (local.kills > prevKills) {
+            Sound.kill();
+            showNotification('Kill!', 'kill');
+            for (const opp of opponents) {
+                if (!opp.alive) opp._killedAt = Date.now();
+            }
+        }
+        if (prevAlive && !local.alive) {
+            this.triggerShake();
+            showNotification('You died', 'self');
+        }
 
         const newCount = Board.countTerritory(local.id);
         if (newCount > prevCount + 1) {
@@ -368,7 +423,11 @@ export const Game = {
             const tile = Board.tiles[i];
             const prev = snapshot[i];
             if (tile.owner !== prev.owner || tile.trail !== prev.trail) {
-                boardUpdates[`${tile.x}_${tile.y}`] = { owner: tile.owner, trail: tile.trail };
+                const localChanged = tile.owner === local.id || prev.owner === local.id ||
+                                     tile.trail === local.id || prev.trail === local.id;
+                if (localChanged) {
+                    boardUpdates[`${tile.x}_${tile.y}`] = { owner: tile.owner, trail: tile.trail };
+                }
             }
         }
         if (Object.keys(boardUpdates).length > 0) {

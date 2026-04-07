@@ -63,7 +63,7 @@ export function movePlayer(player, opponents) {
 
     if (targetTile && targetTile.trail !== null && targetTile.trail !== player.id) {
         const victim = opponents.find(p => p.id === targetTile.trail);
-        if (victim) {
+        if (victim && victim.alive) {
             killPlayer(victim);
             player.kills++;
         }
@@ -118,7 +118,7 @@ export function isTrapped(player) {
 
 function killPlayer(player) {
     player.alive = false;
-    player.respawnTimer = 3;
+    player.respawnTimer = 5;
     Board.clearTrail(player.id);
     player.trail = [];
 }
