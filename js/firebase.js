@@ -74,6 +74,7 @@ export const FirebaseService = {
                     score: 0,
                     kills: 0,
                     alive: true,
+                    ready: false,
                     lastUpdate: serverTimestamp(),
                 }
             },
@@ -95,7 +96,7 @@ export const FirebaseService = {
         if (!data) throw new Error('Session not found');
 
         if (data.players && data.players.player2) {
-            if (data.state === 'playing' || data.state === 'countdown') {
+            if (data.state === 'playing' || data.state === 'countdown' || data.state === 'ready') {
                 throw new Error('Game already in progress');
             }
             throw new Error('Session is full');
@@ -110,10 +111,11 @@ export const FirebaseService = {
             score: 0,
             kills: 0,
             alive: true,
+            ready: true,
             lastUpdate: serverTimestamp(),
         });
 
-        await set(ref(this.db, `sessions/${this.sessionId}/state`), 'countdown');
+        await set(ref(this.db, `sessions/${this.sessionId}/state`), 'ready');
         return this.playerId;
     },
 
@@ -185,6 +187,11 @@ export const FirebaseService = {
         return update(ref(this.db, `sessions/${this.sessionId}`), updates);
     },
 
+    async setPlayerReady(playerId) {
+        if (!this.sessionRef) return;
+        return set(ref(this.db, `sessions/${this.sessionId}/players/${playerId}/ready`), true);
+    },
+
     async setSessionState(state) {
         if (!this.sessionRef) return;
         return set(ref(this.db, `sessions/${this.sessionId}/state`), state);
@@ -208,7 +215,7 @@ export const FirebaseService = {
     async resetSession() {
         if (!this.sessionRef) return;
         return update(ref(this.db, `sessions/${this.sessionId}`), {
-            state: 'countdown',
+            state: 'ready',
             startedAt: false,
             board: this.buildInitialBoard(),
             winner: false,
@@ -218,11 +225,13 @@ export const FirebaseService = {
             'players/player1/score': 0,
             'players/player1/kills': 0,
             'players/player1/alive': true,
+            'players/player1/ready': false,
             'players/player2/position': { x: 7, y: 5 },
             'players/player2/direction': 'right',
             'players/player2/score': 0,
             'players/player2/kills': 0,
             'players/player2/alive': true,
+            'players/player2/ready': false,
         });
     },
 

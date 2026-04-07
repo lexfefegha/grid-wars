@@ -89,6 +89,25 @@
         </div>
     </div>
 
+    <!-- Ready Screen -->
+    <div id="screen-ready" class="hidden">
+        <h1>Grid Wars</h1>
+        <h2 id="ready-status">Both players must be ready to start</h2>
+        <div id="ready-players">
+            <div class="ready-player">
+                <span class="ready-dot" style="background: var(--p1)"></span>
+                <span class="ready-name" id="ready-p1-name">Player 1</span>
+                <span class="ready-badge" id="ready-p1-badge">Not Ready</span>
+            </div>
+            <div class="ready-player">
+                <span class="ready-dot" style="background: var(--p2)"></span>
+                <span class="ready-name" id="ready-p2-name">Player 2</span>
+                <span class="ready-badge" id="ready-p2-badge">Not Ready</span>
+            </div>
+        </div>
+        <button id="btn-ready" class="btn btn-primary">Ready!</button>
+    </div>
+
     <!-- Game Screen -->
     <div id="screen-game" class="hidden">
         <div class="game-header">

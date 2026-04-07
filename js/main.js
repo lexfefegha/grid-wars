@@ -8,6 +8,7 @@ import '../css/style.css';
 const screens = {
     name: document.getElementById('screen-name'),
     waiting: document.getElementById('screen-waiting'),
+    ready: document.getElementById('screen-ready'),
     game: document.getElementById('screen-game'),
     results: document.getElementById('screen-results'),
 };
@@ -22,6 +23,12 @@ const resultsTitle = document.getElementById('results-title');
 const resultsBody = document.getElementById('results-body');
 const btnRematch = document.getElementById('btn-rematch');
 const btnNewGame = document.getElementById('btn-new-game');
+const readyStatus = document.getElementById('ready-status');
+const readyP1Name = document.getElementById('ready-p1-name');
+const readyP2Name = document.getElementById('ready-p2-name');
+const readyP1Badge = document.getElementById('ready-p1-badge');
+const readyP2Badge = document.getElementById('ready-p2-badge');
+const btnReady = document.getElementById('btn-ready');
 const nameInput = document.getElementById('name-input');
 const btnStart = document.getElementById('btn-start');
 const debugBanner = document.getElementById('debug-banner');
@@ -60,6 +67,7 @@ async function startDebugMode() {
 
         await FirebaseService.joinSession(sessionId, 'Debug P2');
         FirebaseService.playerId = 'player1';
+        await FirebaseService.setSessionState('countdown');
 
         const newUrl = `${window.location.pathname}?debug=true&session=${sessionId}`;
         window.history.replaceState({}, '', newUrl);
@@ -105,7 +113,9 @@ async function handleCreate() {
         shareUrlInput.value = FirebaseService.getShareUrl();
 
         FirebaseService.onSessionState((state) => {
-            if (state === 'countdown') {
+            if (state === 'ready') {
+                loadPlayerNames().then(() => showReadyScreen());
+            } else if (state === 'countdown') {
                 loadPlayerNames().then(() => startCountdown());
             }
         });
@@ -132,7 +142,7 @@ async function showJoinFlow(sessionId) {
         }
 
         if (data.players?.player2) {
-            if (data.state === 'playing' || data.state === 'countdown') {
+            if (data.state === 'playing' || data.state === 'countdown' || data.state === 'ready') {
                 waitingStatus.textContent = 'Game already in progress.';
             } else {
                 waitingStatus.textContent = 'Session is full.';
@@ -158,7 +168,7 @@ async function showJoinFlow(sessionId) {
             try {
                 await FirebaseService.joinSession(sessionId, localPlayerName);
                 await loadPlayerNames();
-                startCountdown();
+                showReadyScreen();
             } catch (err) {
                 waitingStatus.textContent = err.message || 'Error joining game.';
                 waitingSpinner.classList.add('hidden');
@@ -192,8 +202,76 @@ async function loadPlayerNames() {
     }
 }
 
+// ── Ready Screen ──
+function showReadyScreen() {
+    FirebaseService.cleanup();
+    showScreen('ready');
+
+    const localId = FirebaseService.playerId;
+    const opponentId = localId === 'player1' ? 'player2' : 'player1';
+
+    readyP1Name.textContent = Game.playerNames.player1;
+    readyP2Name.textContent = Game.playerNames.player2;
+
+    readyP1Badge.textContent = 'Not Ready';
+    readyP1Badge.classList.remove('is-ready');
+    readyP2Badge.textContent = 'Not Ready';
+    readyP2Badge.classList.remove('is-ready');
+
+    readyStatus.textContent = 'Both players must be ready to start';
+
+    btnReady.disabled = false;
+    btnReady.textContent = 'Ready!';
+
+    FirebaseService.onPlayersChange((players) => {
+        if (!players) return;
+
+        const p1Ready = players.player1?.ready || false;
+        const p2Ready = players.player2?.ready || false;
+
+        readyP1Badge.textContent = p1Ready ? 'Ready' : 'Not Ready';
+        readyP1Badge.classList.toggle('is-ready', p1Ready);
+        readyP2Badge.textContent = p2Ready ? 'Ready' : 'Not Ready';
+        readyP2Badge.classList.toggle('is-ready', p2Ready);
+
+        const localReady = localId === 'player1' ? p1Ready : p2Ready;
+        const oppReady = localId === 'player1' ? p2Ready : p1Ready;
+
+        if (localReady) {
+            btnReady.disabled = true;
+            btnReady.textContent = 'Waiting for opponent...';
+        }
+
+        if (p1Ready && p2Ready) {
+            readyStatus.textContent = 'Both players ready!';
+            if (localId === 'player1') {
+                FirebaseService.setSessionState('countdown');
+            }
+        } else if (localReady) {
+            readyStatus.textContent = `Waiting for ${Game.playerNames[opponentId]}...`;
+        } else if (oppReady) {
+            readyStatus.textContent = `${Game.playerNames[opponentId]} is ready! Are you?`;
+        } else {
+            readyStatus.textContent = 'Both players must be ready to start';
+        }
+    });
+
+    FirebaseService.onSessionState((state) => {
+        if (state === 'countdown') {
+            startCountdown();
+        }
+    });
+
+    btnReady.onclick = () => {
+        btnReady.disabled = true;
+        btnReady.textContent = 'Waiting for opponent...';
+        FirebaseService.setPlayerReady(localId);
+    };
+}
+
 // ── 3-2-1 Countdown ──
 function startCountdown() {
+    FirebaseService.cleanup();
     showScreen('game');
     Game.init('game-canvas');
 
@@ -300,12 +378,19 @@ function showResults(result) {
             </span>
         </div>
     `;
+
+    FirebaseService.onSessionState((state) => {
+        if (state === 'ready') {
+            loadPlayerNames().then(() => showReadyScreen());
+        }
+    });
 }
 
 // ── Rematch ──
 btnRematch.addEventListener('click', async () => {
     await FirebaseService.resetSession();
-    startCountdown();
+    await loadPlayerNames();
+    showReadyScreen();
 });
 
 btnNewGame.addEventListener('click', () => {

@@ -329,6 +329,74 @@ body {
     to { transform: rotate(360deg); }
 }
 
+/* ── Ready Screen ── */
+#screen-ready {
+    text-align: center;
+    max-width: 440px;
+    padding: 0 1.5rem;
+}
+
+#screen-ready h1 {
+    font-size: 2.75rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+#screen-ready h2 {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+}
+
+#ready-players {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.ready-player {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.25rem;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.ready-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.ready-name {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.ready-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    background: var(--bg-deep);
+    color: var(--text-muted);
+}
+
+.ready-badge.is-ready {
+    background: #d4edda;
+    color: #155724;
+}
+
 /* ── Buttons ── */
 .menu-buttons {
     display: flex;
@@ -645,12 +713,14 @@ body {
     }
 
     #screen-name h1,
-    #screen-waiting h1 {
+    #screen-waiting h1,
+    #screen-ready h1 {
         font-size: 2rem;
     }
 
     #screen-name,
-    #screen-waiting {
+    #screen-waiting,
+    #screen-ready {
         padding: 0 1rem;
     }
 
