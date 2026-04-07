@@ -19,7 +19,7 @@
                 </div>
                 <div class="htp-rule htp-touch">
                     <span class="htp-icon">&#9650;&#9660;&#9664;&#9654;</span>
-                    <span>You never stop moving. Swipe anywhere to set direction.</span>
+                    <span>You never stop moving. Use the D-pad or swipe to set direction.</span>
                 </div>
                 <div class="htp-rule">
                     <span class="htp-icon htp-trail"></span>
@@ -58,7 +58,7 @@
                 </div>
                 <div class="htp-rule htp-touch">
                     <span class="htp-icon">&#9650;&#9660;&#9664;&#9654;</span>
-                    <span>You never stop moving. Swipe anywhere to set direction.</span>
+                    <span>You never stop moving. Use the D-pad or swipe to set direction.</span>
                 </div>
                 <div class="htp-rule">
                     <span class="htp-icon htp-trail"></span>
@@ -110,6 +110,13 @@
             </div>
         </div>
         <canvas id="game-canvas"></canvas>
+        <div class="dpad" id="dpad">
+            <button class="dpad-btn dpad-up" data-dir="up">&#9650;</button>
+            <button class="dpad-btn dpad-left" data-dir="left">&#9664;</button>
+            <div class="dpad-center"></div>
+            <button class="dpad-btn dpad-right" data-dir="right">&#9654;</button>
+            <button class="dpad-btn dpad-down" data-dir="down">&#9660;</button>
+        </div>
         <div id="game-notification" class="game-notification hidden"></div>
         <div id="debug-banner" class="debug-banner hidden">DEBUG MODE — Arrows: P1 · WASD: P2</div>
     </div>

@@ -18,6 +18,18 @@ export const Touch = {
 
         target.addEventListener('touchstart', (e) => this._onStart(e), { passive: false });
         target.addEventListener('touchend', (e) => this._onEnd(e), { passive: false });
+
+        const dpad = document.getElementById('dpad');
+        if (dpad) {
+            dpad.querySelectorAll('.dpad-btn').forEach(btn => {
+                const dir = btn.dataset.dir;
+                if (!dir) return;
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (this.onDirection) this.onDirection(dir);
+                }, { passive: false });
+            });
+        }
     },
 
     _onStart(e) {

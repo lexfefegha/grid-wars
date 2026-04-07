@@ -63,7 +63,8 @@ export const Game = {
 
     resize() {
         const hPad = 24;
-        const vReserve = 120;
+        const isTouchDevice = matchMedia('(hover: none) and (pointer: coarse)').matches;
+        const vReserve = isTouchDevice ? 210 : 120;
         const maxSize = Math.min(window.innerWidth - hPad, window.innerHeight - vReserve, 600);
         const size = Math.max(maxSize, 200);
         this.canvas.width = size;

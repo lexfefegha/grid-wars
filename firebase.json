@@ -5,7 +5,8 @@
             "firebase.json",
             "**/node_modules/**",
             "scope.md",
-            "PROMPTS.md",
+            "prompts1.md",
+            "prompts2.md",
             "README.md"
         ],
         "rewrites": [
