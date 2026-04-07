@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Wars</title>
+</head>
+<body>
+    <!-- Name Entry Screen -->
+    <div id="screen-name" class="hidden">
+        <h1>Grid Wars</h1>
+        <details class="how-to-play">
+            <summary class="htp-toggle">How to play</summary>
+            <div class="htp-rules">
+                <div class="htp-rule htp-desktop">
+                    <span class="htp-icon">&#8592;&#8594;&#8593;&#8595;</span>
+                    <span>You never stop moving. Arrow keys set direction.</span>
+                </div>
+                <div class="htp-rule htp-touch">
+                    <span class="htp-icon">&#9650;&#9660;&#9664;&#9654;</span>
+                    <span>You never stop moving. Swipe anywhere to set direction.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-trail"></span>
+                    <span>Leave your base to draw a <strong>trail</strong>.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-loop"></span>
+                    <span>Return home to <strong>claim</strong> everything inside your loop.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-kill"></span>
+                    <span>Cross their trail to <strong>eliminate</strong> them.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-clock"></span>
+                    <span>Most territory after <strong>60 seconds</strong> wins.</span>
+                </div>
+            </div>
+        </details>
+        <div class="name-form">
+            <label for="name-input">Enter your name</label>
+            <input id="name-input" type="text" placeholder="Your name" maxlength="16" autocomplete="off">
+            <button id="btn-start" class="btn btn-primary">Create Game</button>
+        </div>
+    </div>
+
+    <!-- Waiting Screen -->
+    <div id="screen-waiting" class="hidden">
+        <h1>Grid Wars</h1>
+        <p class="subtitle">A territory game for two. Claim land, cut trails, own the grid.</p>
+        <h2 id="waiting-status">Creating game...</h2>
+        <div class="spinner" id="waiting-spinner"></div>
+        <div id="share-section" class="hidden">
+            <p>Share this link with a friend:</p>
+            <div class="share-link">
+                <input id="share-url" type="text" readonly>
+                <button class="btn-copy" id="btn-copy-link">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="screen-game" class="hidden">
+        <div class="game-header">
+            <div class="player-score" id="score-p1">
+                <span class="dot" style="background:#C4583A"></span>
+                <span class="score-name">Player 1</span>
+                <span class="score-val">0</span>
+                <span class="kill-val" title="Kills">0 kills</span>
+            </div>
+            <div class="header-center">
+                <button class="timer" id="game-timer" title="Pause (Space)">60</button>
+                <button id="btn-mute" class="btn-mute" title="Toggle sound"><span id="mute-icon">&#128264;</span></button>
+            </div>
+            <div class="player-score" id="score-p2">
+                <span class="dot" style="background:#3A7C6E"></span>
+                <span class="score-name">Player 2</span>
+                <span class="score-val">0</span>
+                <span class="kill-val" title="Kills">0 kills</span>
+            </div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+        <div id="debug-banner" class="debug-banner hidden">DEBUG MODE — Arrows: P1 · WASD: P2</div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="screen-results" class="hidden">
+        <h2 id="results-title">Game Over</h2>
+        <div class="results-body" id="results-body"></div>
+        <div class="menu-buttons">
+            <button id="btn-rematch" class="btn btn-primary">Rematch</button>
+            <button id="btn-new-game" class="btn btn-outline">New Game</button>
+        </div>
+    </div>
+
+    <!-- Pause Overlay -->
+    <div id="pause-overlay" class="pause-overlay hidden">
+        <div class="pause-content">
+            <div class="pause-icon">❚❚</div>
+            <h2>Paused</h2>
+            <p>Press <kbd>Space</kbd> or click the timer to resume</p>
+        </div>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div id="countdown-overlay" class="countdown-overlay hidden">
+        <div class="number" id="countdown-number">3</div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>
