@@ -48,7 +48,35 @@
     <!-- Waiting Screen -->
     <div id="screen-waiting" class="hidden">
         <h1>Grid Wars</h1>
-        <p class="subtitle">A territory game for two. Claim land, cut trails, own the grid.</p>
+        <details class="how-to-play">
+            <summary class="htp-toggle">How to play</summary>
+            <div class="htp-rules">
+                <div class="htp-rule htp-desktop">
+                    <span class="htp-icon">&#8592;&#8594;&#8593;&#8595;</span>
+                    <span>You never stop moving. Arrow keys set direction.</span>
+                </div>
+                <div class="htp-rule htp-touch">
+                    <span class="htp-icon">&#9650;&#9660;&#9664;&#9654;</span>
+                    <span>You never stop moving. Swipe anywhere to set direction.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-trail"></span>
+                    <span>Leave your base to draw a <strong>trail</strong>.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-loop"></span>
+                    <span>Return home to <strong>claim</strong> everything inside your loop.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-kill"></span>
+                    <span>Cross their trail to <strong>eliminate</strong> them.</span>
+                </div>
+                <div class="htp-rule">
+                    <span class="htp-icon htp-clock"></span>
+                    <span>Most territory after <strong>60 seconds</strong> wins.</span>
+                </div>
+            </div>
+        </details>
         <h2 id="waiting-status">Creating game...</h2>
         <div class="spinner" id="waiting-spinner"></div>
         <div id="share-section" class="hidden">

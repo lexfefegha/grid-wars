@@ -266,14 +266,6 @@ body {
     color: var(--text);
 }
 
-#screen-waiting .subtitle {
-    font-size: 0.9rem;
-    font-weight: 400;
-    color: var(--text-muted);
-    margin-bottom: 2.5rem;
-    letter-spacing: 0.01em;
-}
-
 #screen-waiting h2 {
     font-size: 1.1rem;
     font-weight: 500;

@@ -338,6 +338,8 @@ export const Game = {
         const local = this.players.find(p => p.id === this.localPlayerId);
         if (!local) return;
 
+        const snapshot = Board.tiles.map(t => ({ owner: t.owner, trail: t.trail }));
+
         const opponents = this.players.filter(p => p.id !== this.localPlayerId);
         const prevCount = Board.countTerritory(local.id);
         const prevKills = local.kills;
@@ -362,10 +364,16 @@ export const Game = {
         });
 
         const boardUpdates = {};
-        for (const tile of Board.tiles) {
-            boardUpdates[`${tile.x}_${tile.y}`] = { owner: tile.owner, trail: tile.trail };
+        for (let i = 0; i < Board.tiles.length; i++) {
+            const tile = Board.tiles[i];
+            const prev = snapshot[i];
+            if (tile.owner !== prev.owner || tile.trail !== prev.trail) {
+                boardUpdates[`${tile.x}_${tile.y}`] = { owner: tile.owner, trail: tile.trail };
+            }
         }
-        FirebaseService.updateBoard(boardUpdates);
+        if (Object.keys(boardUpdates).length > 0) {
+            FirebaseService.updateBoard(boardUpdates);
+        }
     },
 
     triggerClaimFlash(playerId) {
