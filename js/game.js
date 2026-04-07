@@ -6,8 +6,8 @@ import { Touch } from './touch.js';
 
 export const TICK_MS = 300;
 export const PLAYER_COLOURS = {
-    player1: { territory: '#E8C4B8', trail: 'rgba(196,88,58,0.08)', trailLine: '#C4583A', circle: '#C4583A' },
-    player2: { territory: '#B8DED5', trail: 'rgba(58,124,110,0.08)', trailLine: '#3A7C6E', circle: '#3A7C6E' },
+    player1: { territory: '#E8C4B8', trail: 'rgba(196,88,58,0.18)', trailLine: '#C4583A', circle: '#C4583A' },
+    player2: { territory: '#B8DED5', trail: 'rgba(58,124,110,0.18)', trailLine: '#3A7C6E', circle: '#3A7C6E' },
 };
 const GRID_BG = '#F5F0EB';
 const GRID_LINE = 'rgba(44,36,32,0.07)';
@@ -223,23 +223,43 @@ export const Game = {
             if (data.alive !== undefined) {
                 if (opp.alive && !data.alive) {
                     Board.clearTrail(opp.id);
+                    opp.trail = [];
                 }
                 if (data.alive === true && opp._killedAt && Date.now() - opp._killedAt < 3000) {
-                    // ignore stale alive:true -- we just killed them locally
                 } else {
                     opp.alive = data.alive;
                 }
             }
             if (data.score !== undefined) opp.score = data.score;
 
+            if (data.trail !== undefined) {
+                let trailArr = data.trail;
+                if (trailArr && typeof trailArr === 'object' && !Array.isArray(trailArr)) {
+                    trailArr = Object.values(trailArr);
+                }
+                if (Array.isArray(trailArr) && trailArr.length > 0) {
+                    opp.trail = trailArr.map(p => ({ x: p.x, y: p.y }));
+                } else {
+                    opp.trail = [];
+                }
+            }
+
             if (data.kills !== undefined) {
                 const prevKills = opp.kills;
                 opp.kills = data.kills;
                 if (data.kills > prevKills && local && local.alive) {
+                    const trailTiles = Board.getTrailTiles(local.id);
                     local.alive = false;
                     local.respawnTimer = 5;
                     Board.clearTrail(local.id);
                     local.trail = [];
+                    if (trailTiles.length > 0) {
+                        const clearUpdates = {};
+                        for (const t of trailTiles) {
+                            clearUpdates[`${t.x}_${t.y}`] = { owner: t.owner, trail: null };
+                        }
+                        FirebaseService.updateBoard(clearUpdates);
+                    }
                     this.triggerShake();
                     Sound.death();
                     showNotification(`Killed by ${this.playerNames[opp.id]}`, 'death');
@@ -256,6 +276,8 @@ export const Game = {
             for (const p of this.players) {
                 prevCounts[p.id] = Board.countTerritory(p.id);
             }
+
+            const oppId = this.localPlayerId === 'player1' ? 'player2' : 'player1';
 
             for (const [key, val] of Object.entries(boardData)) {
                 const [xStr, yStr] = key.split('_');
@@ -391,8 +413,45 @@ export const Game = {
         const prevCount = Board.countTerritory(local.id);
         const prevKills = local.kills;
         const prevAlive = local.alive;
+        const localPrev = { x: local.x, y: local.y };
 
         movePlayer(local, opponents);
+
+        if (local.alive && prevAlive) {
+            for (const o of opponents) {
+                if (!o.alive) continue;
+                const oPrev = this.previousPositions[o.id];
+                if (!oPrev) continue;
+                const swapped = local.x === oPrev.x && local.y === oPrev.y &&
+                                o.x === localPrev.x && o.y === localPrev.y;
+                const sameTile = local.x === o.x && local.y === o.y;
+                if (swapped || sameTile) {
+                    const localOnOwn = Board.getTile(local.x, local.y)?.owner === local.id;
+                    const oppOnOwn = Board.getTile(o.x, o.y)?.owner === o.id;
+                    if (!localOnOwn && !oppOnOwn) {
+                        local.alive = false;
+                        local.respawnTimer = 5;
+                        Board.clearTrail(local.id);
+                        local.trail = [];
+                    }
+                }
+            }
+        }
+
+        if (local.alive && prevAlive) {
+            for (const opp of opponents) {
+                if (!opp.alive || opp.trail.length === 0) continue;
+                const steppedOnOppTrail = opp.trail.some(t => t.x === local.x && t.y === local.y);
+                if (steppedOnOppTrail) {
+                    opp.alive = false;
+                    opp.respawnTimer = 5;
+                    Board.clearTrail(opp.id);
+                    opp.trail = [];
+                    local.kills++;
+                    opp._killedAt = Date.now();
+                }
+            }
+        }
 
         if (local.kills > prevKills) {
             Sound.kill();
@@ -417,6 +476,7 @@ export const Game = {
             score: local.score,
             kills: local.kills,
             alive: local.alive,
+            trail: local.trail.length > 0 ? local.trail : false,
         });
 
         const boardUpdates = {};
@@ -426,7 +486,8 @@ export const Game = {
             if (tile.owner !== prev.owner || tile.trail !== prev.trail) {
                 const localChanged = tile.owner === local.id || prev.owner === local.id ||
                                      tile.trail === local.id || prev.trail === local.id;
-                if (localChanged) {
+                const oppTrailCleared = prev.trail !== null && prev.trail !== local.id && tile.trail === null;
+                if (localChanged || oppTrailCleared) {
                     boardUpdates[`${tile.x}_${tile.y}`] = { owner: tile.owner, trail: tile.trail };
                 }
             }
@@ -556,12 +617,18 @@ export const Game = {
                     ctx.fillStyle = `rgba(184,144,111,${flashAlpha})`;
                     ctx.fillRect(x, y, ts, ts);
                 }
-            } else if (tile.trail) {
-                ctx.fillStyle = EMPTY_TILE;
-                ctx.fillRect(x, y, ts, ts);
             } else {
                 ctx.fillStyle = EMPTY_TILE;
                 ctx.fillRect(x, y, ts, ts);
+            }
+        }
+
+        for (const player of this.players) {
+            if (!player.alive || player.trail.length === 0) continue;
+            const trailColour = PLAYER_COLOURS[player.id]?.trail || 'rgba(0,0,0,0.05)';
+            for (const pt of player.trail) {
+                ctx.fillStyle = trailColour;
+                ctx.fillRect(pt.x * ts, pt.y * ts, ts, ts);
             }
         }
 

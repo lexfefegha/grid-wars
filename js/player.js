@@ -15,6 +15,7 @@ export function createPlayer(id, startX, startY, colour, startDirection) {
         colour,
         direction: startDirection,
         nextDirection: startDirection,
+        startDirection,
         score: 0,
         kills: 0,
         alive: true,
@@ -124,6 +125,9 @@ function killPlayer(player) {
 }
 
 function respawnPlayer(player) {
+    player.direction = player.startDirection;
+    player.nextDirection = player.startDirection;
+
     const territoryTiles = Board.getTerritoryTiles(player.id);
     if (territoryTiles.length > 0) {
         const spawn = territoryTiles[Math.floor(Math.random() * territoryTiles.length)];
